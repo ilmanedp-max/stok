@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manajemen Perangkat Jaringan - ILMAN FULL UPGRADE</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0072ff">
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+* { box-sizing: border-box; margin:0; padding:0; font-family:'Poppins',sans-serif; }
+
+body { color:white; }
+
+video {
+ position: fixed;
+ top:0; left:0;
+ width:100%; height:100%;
+ object-fit:cover;
+ z-index:-2;
+}
+
+.overlay {
+ position: fixed;
+ top:0; left:0;
+ width:100%; height:100%;
+ background: rgba(0,0,0,0.6);
+ z-index:-1;
+}
+
+.header {
+ text-align:center;
+ padding:15px;
+ font-size:20px;
+ font-weight:600;
+ background: rgba(0,0,0,0.5);
+ backdrop-filter: blur(5px);
+}
+
+.container {
+ max-width:500px;
+ margin:auto;
+ padding:15px;
+}
+
+.card {
+ background: rgba(255,255,255,0.1);
+ backdrop-filter: blur(10px);
+ border-radius:15px;
+ padding:15px;
+ margin-top:15px;
+ box-shadow:0 4px 10px rgba(0,0,0,0.3);
+}
+
+input, select, button {
+ width:100%;
+ padding:12px;
+ margin-top:10px;
+ border-radius:10px;
+ border:none;
+ font-size:14px;
+}
+
+input, select { color:black; }
+
+button {
+ background: linear-gradient(45deg,#00c6ff,#0072ff);
+ color:white;
+ font-weight:bold;
+ cursor:pointer;
+}
+
+.stats {
+ display:grid;
+ grid-template-columns: repeat(2,1fr);
+ gap:10px;
+}
+
+.stat-box {
+ background: rgba(0,0,0,0.5);
+ padding:10px;
+ border-radius:10px;
+ text-align:center;
+}
+
+.action-btn {
+ display:inline-block;
+ margin-top:8px;
+ padding:6px 10px;
+ border-radius:6px;
+ cursor:pointer;
+}
+
+.delete { background:red; }
+.edit { background:orange; }
+
+.footer {
+ text-align:center;
+ padding:10px;
+ font-size:12px;
+ opacity:0.8;
+}
+</style>
+</head>
+
+<body>
+
+<video autoplay muted loop>
+ <source src="video.mp4" type="video/mp4">
+</video>
+
+<div class="overlay"></div>
+
+<div class="header">📡 Manajemen Perangkat / Alat IT - ILMAN</div>
+
+<div class="container" id="loginPage">
+
+<div class="card">
+<h3>Login</h3>
+<input type="text" id="username" placeholder="Username">
+<input type="password" id="password" placeholder="Password">
+<button onclick="login()">Login</button>
+</div>
+
+</div>
+
+<div class="container" id="app" style="display:none;">
+
+<div class="card">
+<h3>Dashboard</h3>
+<div class="stats">
+<div class="stat-box">Total Item<br><b id="total">0</b></div>
+<div class="stat-box">Total Jumlah<br><b id="totalJumlah">0</b></div>
+</div>
+</div>
+
+<div class="card">
+<h3>Tambah / Edit Alat</h3>
+
+<input type="hidden" id="editIndex">
+
+<input type="text" id="nama" placeholder="Nama Perangkat">
+
+<select id="jenis">
+<option>Router</option>
+<option>Switch</option>
+<option>Access Point</option>
+<option>Server</option>
+<option>Printer</option>
+<option>Ram DDR4 8GB</option>
+<option>Ram DDR3 8GB</option>
+<option>Scanner</option>
+<option>PSU</option>
+<option>RB951</option>
+<option>LAN Card</option>
+<option>SSD</option>
+<option>HUB</option>
+<option>HDMI</option>
+<option>VGA</option>
+<option>Konektor Barel RJ45</option>
+<option>RJ45</option>
+<option>Kabel ECR</option>
+<option>Kabel LAN</option>
+<option>Obeng Bunga</option>
+<option>Obeng Plat</option>
+<option>Pasta Processor</option>
+</select>
+
+<input type="number" id="jumlah" placeholder="Jumlah">
+
+<input type="text" id="lokasi" placeholder="Lokasi">
+
+<button onclick="simpan()">Simpan</button>
+<button onclick="exportExcel()">Export Excel</button>
+<button onclick="logout()">Logout</button>
+
+</div>
+
+<div class="card">
+<h3>Pencarian</h3>
+<input type="text" id="search" placeholder="Cari perangkat..." onkeyup="tampilkan()">
+</div>
+
+<div id="list"></div>
+
+</div>
+
+<div class="footer">© 2026 Sistem Manajemen Alat IT - ILMAN</div>
+
+<script>
+
+let perangkat = [];
+
+function login() {
+ let u = document.getElementById("username").value;
+ let p = document.getElementById("password").value;
+
+ if (u === "admin" && p === "123") {
+ localStorage.setItem("login", "true");
+ showApp();
+ } else {
+ alert("Username / Password salah");
+ }
+}
+
+function logout() {
+ localStorage.removeItem("login");
+ location.reload();
+}
+
+function showApp() {
+ document.getElementById("loginPage").style.display = "none";
+ document.getElementById("app").style.display = "block";
+ loadLocal();
+}
+
+function simpan() {
+
+ let nama = document.getElementById("nama").value.trim();
+ let jumlah = document.getElementById("jumlah").value;
+
+ if (nama === "") return alert("Nama wajib diisi");
+ if (jumlah === "" || jumlah <= 0) return alert("Jumlah harus diisi");
+
+ let data = {
+ nama: nama,
+ jenis: document.getElementById("jenis").value,
+ jumlah: parseInt(jumlah),
+ lokasi: document.getElementById("lokasi").value
+ };
+
+ let index = document.getElementById("editIndex").value;
+
+ if (index === "") {
+ perangkat.push(data);
+ } else {
+ perangkat[index] = data;
+ }
+
+ document.getElementById("editIndex").value = "";
+
+ simpanLocal();
+ tampilkan();
+ resetForm();
+}
+
+function tampilkan() {
+
+ let keyword = document.getElementById("search").value.toLowerCase();
+ let html = "";
+
+ let totalJumlah = 0;
+
+ perangkat.forEach((p,i)=>{
+
+ if (p.nama.toLowerCase().includes(keyword)) {
+
+ totalJumlah += parseInt(p.jumlah);
+
+ html += `
+ <div class="card">
+ <b>${p.nama}</b><br>
+ Jenis: ${p.jenis}<br>
+ Jumlah: ${p.jumlah}<br>
+ Lokasi: ${p.lokasi}<br>
+
+ <span class="action-btn edit" onclick="edit(${i})">Edit</span>
+ <span class="action-btn delete" onclick="hapus(${i})">Hapus</span>
+ </div>`;
+
+ }
+
+ });
+
+ document.getElementById("list").innerHTML = html;
+ document.getElementById("total").innerText = perangkat.length;
+ document.getElementById("totalJumlah").innerText = totalJumlah;
+}
+
+function edit(i) {
+ let p = perangkat[i];
+ document.getElementById("nama").value = p.nama;
+ document.getElementById("jenis").value = p.jenis;
+ document.getElementById("jumlah").value = p.jumlah;
+ document.getElementById("lokasi").value = p.lokasi;
+ document.getElementById("editIndex").value = i;
+}
+
+function hapus(i) {
+ if (confirm("Hapus data?")) {
+ perangkat.splice(i,1);
+ simpanLocal();
+ tampilkan();
+ }
+}
+
+function simpanLocal() {
+ localStorage.setItem("perangkat", JSON.stringify(perangkat));
+}
+
+function loadLocal() {
+ let data = localStorage.getItem("perangkat");
+ if (data) {
+ perangkat = JSON.parse(data);
+ tampilkan();
+ }
+}
+
+function resetForm() {
+ document.getElementById("nama").value="";
+ document.getElementById("jumlah").value="";
+ document.getElementById("lokasi").value="";
+}
+
+function exportExcel() {
+ let csv = "Nama,Jenis,Jumlah,Lokasi\n";
+
+ perangkat.forEach(p=>{
+ csv += `${p.nama},${p.jenis},${p.jumlah},${p.lokasi}\n`;
+ });
+
+ let blob = new Blob([csv], { type: 'text/csv' });
+ let a = document.createElement('a');
+ a.href = URL.createObjectURL(blob);
+ a.download = 'data_alat_ilman.csv';
+ a.click();
+}
+
+if (localStorage.getItem("login") === "true") {
+ showApp();
+}
+
+if ('serviceWorker' in navigator) {
+ window.addEventListener('load', function() {
+ navigator.serviceWorker.register('sw.js');
+ });
+}
+
+</script>
+
+</body>
+</html>
